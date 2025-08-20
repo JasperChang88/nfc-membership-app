@@ -187,6 +187,7 @@
         document.getElementById('saveSettingsButton').addEventListener('click', saveSettings);
         document.getElementById('addAdminButton').addEventListener('click', addAdmin);
         Object.values(allAdminTabs).forEach(tab => tab.addEventListener('click', () => switchAdminTab(tab.id.split('-')[1])));
+        window.addEventListener('DOMContentLoaded', handleUrlRedirect); // New listener for URL scans
 
         // --- Global State ---
         let expirySettings = {};
@@ -214,10 +215,10 @@
                     loadAdminDashboard();
                 } else {
                     signOut(auth);
-                    showView('login');
+                    if (!window.location.search.includes('id=')) showView('login');
                 }
             } else {
-                showView('login');
+                 if (!window.location.search.includes('id=')) showView('login');
             }
         });
 
@@ -273,8 +274,26 @@
 
         function createMemberListItem(member) {
             const item = document.createElement('div');
-            item.className = 'p-3 bg-gray-50 rounded-lg flex justify-between items-center';
-            item.innerHTML = `<div><p class="font-semibold">${member.name}</p><p class="text-sm text-gray-600">${member.level}</p></div>`;
+            item.className = 'p-3 bg-gray-50 rounded-lg';
+            item.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-semibold">${member.name}</p>
+                        <p class="text-sm text-gray-600">${member.level}</p>
+                    </div>
+                    <div id="button-container-${member.id}"></div>
+                </div>
+                <div class="mt-2 text-left">
+                    <p class="text-xs text-gray-500">Member ID:</p>
+                    <div class="flex items-center gap-2">
+                        <input type="text" readonly value="${member.id}" class="w-full bg-gray-200 text-gray-700 text-xs p-1 rounded">
+                        <button onclick="copyToClipboard('${member.id}', '${member.id}')" id="copy-btn-${member.id}" class="p-1.5 bg-gray-300 rounded hover:bg-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            const buttonContainer = item.querySelector(`#button-container-${member.id}`);
             const button = document.createElement('button');
             if (member.paymentStatus === 'Pending') {
                 button.textContent = 'Confirm Payment';
@@ -285,9 +304,19 @@
                 button.className = 'bg-blue-500 text-white text-sm font-bold py-1 px-2 rounded-md hover:bg-blue-600';
                 button.onclick = () => writeMemberToCard(member);
             }
-            item.appendChild(button);
+            buttonContainer.appendChild(button);
             return item;
         }
+        
+        window.copyToClipboard = (text, id) => {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById(`copy-btn-${id}`);
+                btn.innerHTML = `<svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                setTimeout(() => {
+                    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>`;
+                }, 2000);
+            });
+        };
 
         function fetchScanLog() {
             const scansQuery = query(collection(db, "scans"), orderBy("timestamp", "desc"), limit(50));
@@ -341,20 +370,28 @@
             }
         }
 
-        // --- NFC Logic ---
+        // --- NFC & URL Logic ---
+        async function handleUrlRedirect() {
+            const params = new URLSearchParams(window.location.search);
+            const memberId = params.get('id');
+            if (memberId) {
+                // Hide login/signup/scan button if loaded from a URL scan
+                showView(null); // Hides all main views
+                document.getElementById('scannerView').classList.remove('hidden');
+                document.getElementById('scanButton').classList.add('hidden');
+                document.getElementById('scanStatus').textContent = 'Validating member ID from URL...';
+                await validateMemberById(memberId);
+            }
+        }
+
         async function writeMemberToCard(member) {
             const adminStatus = document.getElementById('adminStatus');
             adminStatus.textContent = 'Preparing to write member ID...';
-            
-            // The only data written to the card is its unique ID from Firestore
             const memberId = member.id;
-
             adminStatus.textContent = 'Tap a blank card to write...';
             try {
                 const ndef = new NDEFReader();
-                await ndef.write({
-                    records: [{ recordType: "text", data: memberId }]
-                });
+                await ndef.write({ records: [{ recordType: "text", data: memberId }] });
                 adminStatus.textContent = `Successfully wrote card for ${member.name}!`;
             } catch (error) {
                 adminStatus.textContent = 'Failed to write card. Try again.';
@@ -363,12 +400,9 @@
         
         async function handleScan() {
             const scanStatus = document.getElementById('scanStatus');
-            const cardDisplayWrapper = document.getElementById('cardDisplayWrapper');
-            const geminiFeatures = document.getElementById('geminiFeatures');
-
             scanStatus.textContent = 'Tap your NFC card to scan...';
-            cardDisplayWrapper.classList.add('hidden');
-            geminiFeatures.classList.add('hidden');
+            document.getElementById('cardDisplayWrapper').classList.add('hidden');
+            document.getElementById('geminiFeatures').classList.add('hidden');
 
             try {
                 const ndef = new NDEFReader();
@@ -380,31 +414,33 @@
 
                 ndef.addEventListener('reading', async ({ message }) => {
                     scanStatus.textContent = 'Scan successful! Validating...';
-                    
                     const record = message.records[0];
                     if (record) {
                         const textDecoder = new TextDecoder(record.encoding);
                         const memberId = textDecoder.decode(record.data);
-                        
-                        // --- Server-Side Validation ---
-                        const memberRef = doc(db, "members", memberId);
-                        const docSnap = await getDoc(memberRef);
-
-                        if (docSnap.exists() && docSnap.data().paymentStatus === "Paid") {
-                            const memberInfo = { id: docSnap.id, ...docSnap.data() };
-                            const expiryDate = memberInfo.level === 'Semester' ? expirySettings.semester : expirySettings.schoolYear;
-                            displayMemberInfo(memberInfo, expiryDate, true);
-                            await logScan(memberInfo);
-                            generateWelcomeMessage(memberInfo.name);
-                        } else {
-                            displayMemberInfo({ name: "Unknown", id: "N/A", level: "N/A" }, "N/A", false);
-                        }
+                        await validateMemberById(memberId);
                     }
                 });
 
             } catch (error) {
                 console.error('NFC Scan Error:', error);
                 scanStatus.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function validateMemberById(memberId) {
+            await fetchSettings(); // Ensure settings are loaded
+            const memberRef = doc(db, "members", memberId);
+            const docSnap = await getDoc(memberRef);
+
+            if (docSnap.exists() && docSnap.data().paymentStatus === "Paid") {
+                const memberInfo = { id: docSnap.id, ...docSnap.data() };
+                const expiryDate = memberInfo.level === 'Semester' ? expirySettings.semester : expirySettings.schoolYear;
+                displayMemberInfo(memberInfo, expiryDate, true);
+                await logScan(memberInfo);
+                generateWelcomeMessage(memberInfo.name);
+            } else {
+                displayMemberInfo({ name: "Unknown Member", id: "N/A", level: "N/A" }, "N/A", false);
             }
         }
 
