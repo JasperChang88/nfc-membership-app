@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETSS Membership App</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Link to your new CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100">
+
+    <!-- Main App Wrapper -->
+    <div class="relative min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm p-4 flex items-center sticky top-0 z-10">
+            <button id="menuButton" class="p-2 rounded-md hover:bg-gray-100">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <img id="headerLogo" class="h-8 ml-4 hidden" alt="App Logo">
+            <h1 id="headerTitle" class="text-lg font-bold text-gray-800 ml-4">ETSS Membership App</h1>
+        </header>
+
+        <!-- Sidebar Menu -->
+        <div id="sidebarMenu" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-30 p-4">
+            <h2 class="text-xl font-bold mb-6">Menu</h2>
+            <nav id="menuNav" class="space-y-2"></nav>
+        </div>
+        <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-20"></div>
+
+
+        <!-- Main Content -->
+        <main class="p-6 w-full max-w-md mx-auto">
+            <!-- View Container -->
+            <div id="appContainer">
+                <!-- Login View -->
+                <div id="loginView" class="hidden">
+                    <h2 class="text-xl font-bold text-gray-800 text-center">Admin Login</h2>
+                    <div class="mt-4 space-y-4">
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="email" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" id="password" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <button id="loginButton" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Login</button>
+                        <p id="loginError" class="text-sm text-red-600 text-center h-4"></p>
+                    </div>
+                </div>
+
+                <!-- Members View (Admin) -->
+                <div id="membersView" class="hidden">
+                     <h2 class="text-xl font-bold text-gray-800">Member Management</h2>
+                     <div class="mt-4">
+                        <h3 class="font-bold text-gray-700">Pending Approval</h3>
+                        <div id="pendingMembersList" class="mt-2 space-y-2"></div>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="font-bold text-gray-700">Active Members</h3>
+                        <div id="activeMembersList" class="mt-2 space-y-2"></div>
+                    </div>
+                    <p id="adminStatus" class="mt-4 text-sm text-center h-5"></p>
+                </div>
+
+                <!-- Scan Log View (Admin) -->
+                <div id="scanLogView" class="hidden">
+                    <h2 class="text-xl font-bold text-gray-800">Scan Log</h2>
+                    <div id="scanLogList" class="mt-4 space-y-2 max-h-96 overflow-y-auto"></div>
+                </div>
+
+                <!-- Admin Settings View -->
+                <div id="adminSettingsView" class="hidden">
+                    <h2 class="text-xl font-bold text-gray-800">Admin Settings</h2>
+                    <div class="mt-4 space-y-6">
+                        <div>
+                             <h3 class="font-bold text-gray-700">App & Card Design</h3>
+                             <div class="mt-2 space-y-3">
+                                <div>
+                                    <label for="appLogoUrl" class="block text-sm font-medium text-gray-600">App Header Logo URL</label>
+                                    <input type="url" id="appLogoUrl" class="mt-1 block w-full px-3 py-2 border-gray-300 rounded-md" placeholder="https://.../logo.png">
+                                </div>
+                                <div class="flex gap-4">
+                                    <div>
+                                        <label for="gradientFrom" class="block text-sm font-medium text-gray-600">Card Gradient From</label>
+                                        <input type="color" id="gradientFrom" value="#4338ca" class="mt-1 w-full h-10 border-gray-300 rounded-md">
+                                    </div>
+                                    <div>
+                                        <label for="gradientTo" class="block text-sm font-medium text-gray-600">Card Gradient To</label>
+                                        <input type="color" id="gradientTo" value="#1e40af" class="mt-1 w-full h-10 border-gray-300 rounded-md">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-700">Membership Expiry Dates</h3>
+                            <div class="mt-2 space-y-3">
+                                <div>
+                                    <label for="semesterExpiry" class="block text-sm font-medium text-gray-600">Semester Expiry</label>
+                                    <input type="date" id="semesterExpiry" class="mt-1 block w-full px-3 py-2 border-gray-300 rounded-md" value="2025-12-19">
+                                </div>
+                                <div>
+                                    <label for="yearExpiry" class="block text-sm font-medium text-gray-600">School Year Expiry</label>
+                                    <input type="date" id="yearExpiry" class="mt-1 block w-full px-3 py-2 border-gray-300 rounded-md" value="2026-05-22">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-700">Import Members from CSV</h3>
+                            <p class="text-sm text-gray-600 mt-1">CSV must have 'name', 'year_of_study', 'school', and 'level' columns.</p>
+                            <input type="file" id="csvFile" accept=".csv" class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+                            <button id="importCsvButton" class="w-full mt-3 bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">Import Members</button>
+                        </div>
+                        <button id="saveSettingsButton" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Save All Settings</button>
+                    </div>
+                </div>
+
+                <!-- Scanner View -->
+                <div id="scannerView">
+                     <button id="scanButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700">Scan Membership Card</button>
+                     <p id="scanStatus" class="mt-4 text-sm text-gray-600 h-5"></p>
+                     <div id="cardDisplayWrapper" class="hidden"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Edit Member Modal -->
+    <div id="editMemberModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40">
+        <div class="bg-white rounded-lg p-6 w-full max-w-sm">
+            <h3 class="text-lg font-bold mb-4">Edit Member</h3>
+            <div class="space-y-3 text-left">
+                <input type="hidden" id="editMemberId">
+                <div>
+                    <label for="editName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                    <input type="text" id="editName" class="mt-1 block w-full px-3 py-2 border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="editYear" class="block text-sm font-medium text-gray-700">Year of Study</label>
+                    <input type="text" id="editYear" class="mt-1 block w-full px-3 py-2 border-gray-300 rounded-md">
+                </div>
+                 <div>
+                    <label for="editSchool" class="block text-sm font-medium text-gray-700">School</label>
+                    <input type="text" id="editSchool" class="mt-1 block w-full px-3 py-2 border-gray-300 rounded-md">
+                </div>
+            </div>
+            <div class="mt-6 flex gap-4">
+                <button id="cancelEditButton" class="w-full bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button id="saveMemberButton" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notificationToast" class="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white z-50">
+        <p id="notificationMessage"></p>
+    </div>
+
+    <!-- Link to your new JavaScript file -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
