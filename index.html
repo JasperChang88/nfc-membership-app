@@ -170,7 +170,6 @@
         const db = getFirestore(app);
 
         // --- App Configuration ---
-        const SECRET_KEY = "your-super-secret-key-that-no-one-knows";
         let ADMIN_EMAIL = "jasperchang88888@gmail.com"; // Default admin
 
         // --- Element References ---
@@ -191,7 +190,6 @@
 
         // --- Global State ---
         let expirySettings = {};
-        let currentMemberInfo = null;
 
         // --- View & Tab Management ---
         function showView(viewName) {
@@ -211,11 +209,11 @@
             if (user) {
                 const isAdmin = await checkIsAdmin(user.email);
                 if (isAdmin) {
-                    ADMIN_EMAIL = user.email; // Set current user as admin
+                    ADMIN_EMAIL = user.email;
                     showView('admin');
                     loadAdminDashboard();
                 } else {
-                    signOut(auth); // Not an admin, sign out
+                    signOut(auth);
                     showView('login');
                 }
             } else {
@@ -224,7 +222,7 @@
         });
 
         async function checkIsAdmin(email) {
-            if (email === "jasperchang88888@gmail.com") return true; // Super admin
+            if (email === "jasperchang88888@gmail.com") return true;
             const adminRef = doc(db, "admins", email);
             const docSnap = await getDoc(adminRef);
             return docSnap.exists();
@@ -343,36 +341,20 @@
             }
         }
 
-        // --- NFC & Crypto Logic ---
-        async function createSignature(str) {
-            const textBuffer = new TextEncoder().encode(str);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', textBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        async function signMemberData(data) {
-            const dataString = `${data.memberId}|${data.name}|${data.level}|${data.expires}|${SECRET_KEY}`;
-            return await createSignature(dataString);
-        }
-
+        // --- NFC Logic ---
         async function writeMemberToCard(member) {
             const adminStatus = document.getElementById('adminStatus');
-            const expiryDate = member.level === 'Semester' ? expirySettings.semester : expirySettings.schoolYear;
-            if (!expiryDate) { adminStatus.textContent = "Set expiry dates in Settings first!"; return; }
+            adminStatus.textContent = 'Preparing to write member ID...';
             
-            const cardData = {
-                memberId: member.id,
-                name: member.name,
-                level: member.level,
-                expires: expiryDate,
-            };
-            cardData.signature = await signMemberData(cardData);
+            // The only data written to the card is its unique ID from Firestore
+            const memberId = member.id;
 
             adminStatus.textContent = 'Tap a blank card to write...';
             try {
                 const ndef = new NDEFReader();
-                await ndef.write({ records: [{ recordType: "text", data: JSON.stringify(cardData) }] });
+                await ndef.write({
+                    records: [{ recordType: "text", data: memberId }]
+                });
                 adminStatus.textContent = `Successfully wrote card for ${member.name}!`;
             } catch (error) {
                 adminStatus.textContent = 'Failed to write card. Try again.';
@@ -402,19 +384,20 @@
                     const record = message.records[0];
                     if (record) {
                         const textDecoder = new TextDecoder(record.encoding);
-                        const dataText = textDecoder.decode(record.data);
+                        const memberId = textDecoder.decode(record.data);
                         
-                        try {
-                            const memberInfo = JSON.parse(dataText);
-                            currentMemberInfo = memberInfo;
-                            const isValid = await displayMemberInfo(memberInfo);
-                            if (isValid) {
-                                await logScan(memberInfo);
-                                generateWelcomeMessage(memberInfo.name);
-                            }
-                        } catch (error) {
-                            console.error("Error parsing JSON:", error);
-                            scanStatus.textContent = 'Could not parse data from NFC card.';
+                        // --- Server-Side Validation ---
+                        const memberRef = doc(db, "members", memberId);
+                        const docSnap = await getDoc(memberRef);
+
+                        if (docSnap.exists() && docSnap.data().paymentStatus === "Paid") {
+                            const memberInfo = { id: docSnap.id, ...docSnap.data() };
+                            const expiryDate = memberInfo.level === 'Semester' ? expirySettings.semester : expirySettings.schoolYear;
+                            displayMemberInfo(memberInfo, expiryDate, true);
+                            await logScan(memberInfo);
+                            generateWelcomeMessage(memberInfo.name);
+                        } else {
+                            displayMemberInfo({ name: "Unknown", id: "N/A", level: "N/A" }, "N/A", false);
                         }
                     }
                 });
@@ -425,7 +408,7 @@
             }
         }
 
-        async function displayMemberInfo(info) {
+        function displayMemberInfo(info, expiry, isValid) {
             const cardDisplayWrapper = document.getElementById('cardDisplayWrapper');
             cardDisplayWrapper.innerHTML = `
                 <div class="mt-6 p-6 bg-gradient-to-br from-indigo-700 to-blue-800 text-white rounded-2xl shadow-2xl text-left fade-in relative">
@@ -460,16 +443,13 @@
             const welcomeMessageEl = document.getElementById('welcomeMessage');
             const geminiFeatures = document.getElementById('geminiFeatures');
 
-            const expectedSignature = await signMemberData(info);
-            const isValid = info.signature && expectedSignature === info.signature;
-            
             validationBadgeEl.textContent = isValid ? 'VALID' : 'INVALID';
             validationBadgeEl.className = `absolute top-4 right-4 text-xs font-bold px-2.5 py-1 rounded-full ${isValid ? 'bg-green-400 text-green-900' : 'bg-red-400 text-red-900'}`;
             
-            memberNameEl.textContent = info.name || 'N/A';
-            memberIdEl.textContent = info.memberId || 'N/A';
-            memberLevelEl.textContent = info.level || 'N/A';
-            memberExpiresEl.textContent = info.expires || 'N/A';
+            memberNameEl.textContent = info.name;
+            memberIdEl.textContent = info.id;
+            memberLevelEl.textContent = info.level;
+            memberExpiresEl.textContent = expiry;
 
             cardDisplayWrapper.classList.remove('hidden');
             
@@ -479,23 +459,18 @@
                     <div id="perkResult" class="p-4 bg-gray-50 rounded-lg text-left text-sm text-gray-700 whitespace-pre-wrap"></div>
                     <div id="loadingSpinner" class="hidden mx-auto spinner"></div>
                 `;
-                document.getElementById('perkButton').addEventListener('click', () => {
-                     if (currentMemberInfo) {
-                        generatePerkIdeas(currentMemberInfo.name, currentMemberInfo.level);
-                    }
-                });
+                document.getElementById('perkButton').addEventListener('click', () => generatePerkIdeas(info.name, info.level));
                 geminiFeatures.classList.remove('hidden');
             } else {
                  geminiFeatures.classList.add('hidden');
-                 welcomeMessageEl.textContent = 'This card is not valid.';
+                 welcomeMessageEl.textContent = 'This card is not valid or membership is not active.';
             }
-            return isValid;
         }
 
         async function logScan(memberInfo) {
             try {
                 await addDoc(collection(db, "scans"), {
-                    memberId: memberInfo.memberId,
+                    memberId: memberInfo.id,
                     memberName: memberInfo.name,
                     timestamp: new Date()
                 });
