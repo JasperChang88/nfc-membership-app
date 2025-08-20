@@ -20,6 +20,9 @@
         /* Sidebar styles */
         #sidebarMenu { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
         #sidebarMenu.open { transform: translateX(0); }
+        /* Notification Toast */
+        #notificationToast { transform: translateY(150%); transition: transform 0.3s ease-in-out; }
+        #notificationToast.show { transform: translateY(0); }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -27,19 +30,19 @@
     <!-- Main App Wrapper -->
     <div class="relative min-h-screen">
         <!-- Header -->
-        <header class="bg-white shadow-sm p-4 flex items-center">
+        <header class="bg-white shadow-sm p-4 flex items-center sticky top-0 z-10">
             <button id="menuButton" class="p-2 rounded-md hover:bg-gray-100">
                 <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
-            <h1 class="text-lg font-bold text-gray-800 ml-4">Membership System</h1>
+            <h1 id="headerTitle" class="text-lg font-bold text-gray-800 ml-4">Membership System</h1>
         </header>
 
         <!-- Sidebar Menu -->
-        <div id="sidebarMenu" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-20 p-4">
+        <div id="sidebarMenu" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-30 p-4">
             <h2 class="text-xl font-bold mb-6">Menu</h2>
             <nav id="menuNav" class="space-y-2"></nav>
         </div>
-        <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-10"></div>
+        <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-20"></div>
 
 
         <!-- Main Content -->
@@ -63,51 +66,30 @@
                     </div>
                 </div>
 
-                <!-- Signup View -->
-                <div id="signupView" class="hidden">
-                     <h2 class="text-xl font-bold text-gray-800 text-center">Membership Signup</h2>
-                     <div class="mt-4 space-y-4 text-left">
-                        <div>
-                            <label for="newName" class="block text-sm font-medium text-gray-700">Full Name</label>
-                            <input type="text" id="newName" class="mt-1 block w-full px-3 py-2 border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="newLevel" class="block text-sm font-medium text-gray-700">Membership Tier</label>
-                            <select id="newLevel" class="mt-1 block w-full px-3 py-2 border-gray-300 rounded-md">
-                                <option value="Semester">Semester (£4)</option>
-                                <option value="School Year">School Year (£7)</option>
-                            </select>
-                        </div>
-                        <button id="signupButton" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700">Submit</button>
-                        <p id="signupStatus" class="mt-2 text-sm text-center h-5"></p>
-                     </div>
+                <!-- Members View (Admin) -->
+                <div id="membersView" class="hidden">
+                     <h2 class="text-xl font-bold text-gray-800">Member Management</h2>
+                     <div class="mt-4">
+                        <h3 class="font-bold text-gray-700">Pending Approval</h3>
+                        <div id="pendingMembersList" class="mt-2 space-y-2"></div>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="font-bold text-gray-700">Active Members</h3>
+                        <div id="activeMembersList" class="mt-2 space-y-2"></div>
+                    </div>
+                    <p id="adminStatus" class="mt-4 text-sm text-center h-5"></p>
                 </div>
 
-                <!-- Admin Dashboard View -->
-                <div id="adminDashboardView" class="hidden">
-                    <h2 class="text-xl font-bold text-gray-800">Admin Dashboard</h2>
-                    <div class="border-b border-gray-200 mt-4">
-                        <nav class="-mb-px flex space-x-6" aria-label="Tabs">
-                            <button id="tab-members" class="tab-button active">Members</button>
-                            <button id="tab-scans" class="tab-button">Scan Log</button>
-                            <button id="tab-settings" class="tab-button">Settings</button>
-                        </nav>
-                    </div>
-                    <div id="content-members">
-                        <div class="mt-4">
-                            <h3 class="font-bold text-gray-700">Pending Approval</h3>
-                            <div id="pendingMembersList" class="mt-2 space-y-2"></div>
-                        </div>
-                        <div class="mt-6">
-                            <h3 class="font-bold text-gray-700">Active Members</h3>
-                            <div id="activeMembersList" class="mt-2 space-y-2"></div>
-                        </div>
-                        <p id="adminStatus" class="mt-4 text-sm text-center h-5"></p>
-                    </div>
-                    <div id="content-scans" class="hidden mt-4">
-                        <div id="scanLogList" class="space-y-2 max-h-80 overflow-y-auto"></div>
-                    </div>
-                    <div id="content-settings" class="hidden mt-4 space-y-6">
+                <!-- Scan Log View (Admin) -->
+                <div id="scanLogView" class="hidden">
+                    <h2 class="text-xl font-bold text-gray-800">Scan Log</h2>
+                    <div id="scanLogList" class="mt-4 space-y-2 max-h-96 overflow-y-auto"></div>
+                </div>
+
+                <!-- Admin Settings View -->
+                <div id="adminSettingsView" class="hidden">
+                    <h2 class="text-xl font-bold text-gray-800">Admin Settings</h2>
+                    <div class="mt-4 space-y-6">
                         <div>
                             <h3 class="font-bold text-gray-700">Card Design</h3>
                              <div class="mt-2 space-y-3">
@@ -140,8 +122,13 @@
                                 </div>
                             </div>
                         </div>
+                        <div>
+                            <h3 class="font-bold text-gray-700">Import Members from CSV</h3>
+                            <p class="text-sm text-gray-600 mt-1">Use a Google Form for signups, then export the Google Sheet as a CSV file. The CSV must have 'name' and 'level' columns.</p>
+                            <input type="file" id="csvFile" accept=".csv" class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+                            <button id="importCsvButton" class="w-full mt-3 bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">Import Members</button>
+                        </div>
                         <button id="saveSettingsButton" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Save All Settings</button>
-                        <p id="settingsStatus" class="text-sm text-center h-4"></p>
                     </div>
                 </div>
 
@@ -156,11 +143,16 @@
         </main>
     </div>
 
+    <!-- Notification Toast -->
+    <div id="notificationToast" class="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white">
+        <p id="notificationMessage"></p>
+    </div>
+
     <script type="module">
         // --- Firebase SDKs ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, getDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, setDoc, getDoc, query, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Config ---
         const firebaseConfig = {
@@ -183,20 +175,18 @@
         let ADMIN_EMAIL = "jasperchang88888@gmail.com"; // Default admin
 
         // --- Element References ---
-        const allViews = { scanner: document.getElementById('scannerView'), login: document.getElementById('loginView'), signup: document.getElementById('signupView'), admin: document.getElementById('adminDashboardView') };
-        const allAdminTabs = { members: document.getElementById('tab-members'), scans: document.getElementById('tab-scans'), settings: document.getElementById('tab-settings') };
-        const allAdminContents = { members: document.getElementById('content-members'), scans: document.getElementById('content-scans'), settings: document.getElementById('content-settings') };
+        const allViews = { scanner: document.getElementById('scannerView'), login: document.getElementById('loginView'), members: document.getElementById('membersView'), scanLog: document.getElementById('scanLogView'), adminSettings: document.getElementById('adminSettingsView') };
         const menuButton = document.getElementById('menuButton');
         const sidebarMenu = document.getElementById('sidebarMenu');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
         const menuNav = document.getElementById('menuNav');
+        const headerTitle = document.getElementById('headerTitle');
         
         // --- Event Listeners ---
         document.getElementById('loginButton').addEventListener('click', handleLogin);
-        document.getElementById('signupButton').addEventListener('click', handleSignup);
         document.getElementById('scanButton').addEventListener('click', handleScan);
         document.getElementById('saveSettingsButton').addEventListener('click', saveSettings);
-        Object.values(allAdminTabs).forEach(tab => tab.addEventListener('click', () => switchAdminTab(tab.id.split('-')[1])));
+        document.getElementById('importCsvButton').addEventListener('click', handleCsvImport);
         window.addEventListener('DOMContentLoaded', handleUrlRedirect);
         menuButton.addEventListener('click', toggleMenu);
         sidebarOverlay.addEventListener('click', toggleMenu);
@@ -208,7 +198,17 @@
         // --- View & Menu Management ---
         function showView(viewName) {
             Object.values(allViews).forEach(v => v.classList.add('hidden'));
-            if(allViews[viewName]) allViews[viewName].classList.remove('hidden');
+            if(allViews[viewName]) {
+                allViews[viewName].classList.remove('hidden');
+                const titleMap = {
+                    scanner: 'Scan Card',
+                    login: 'Admin Login',
+                    members: 'Member Management',
+                    scanLog: 'Scan Log',
+                    adminSettings: 'Admin Settings'
+                };
+                headerTitle.textContent = titleMap[viewName] || 'Membership System';
+            }
             toggleMenu(false); // Close menu on navigation
         }
 
@@ -227,9 +227,10 @@
             menuNav.innerHTML = ''; // Clear existing menu
             const items = [
                 { name: 'Scan Card', view: 'scanner' },
-                { name: 'Member Signup', view: 'signup' },
-                isAdmin ? { name: 'Admin Dashboard', view: 'admin' } : { name: 'Admin Login', view: 'login' },
-                isAdmin ? { name: 'Logout', action: () => signOut(auth) } : null
+                isAdmin ? { name: 'Members', view: 'members' } : null,
+                isAdmin ? { name: 'Scan Log', view: 'scanLog' } : null,
+                isAdmin ? { name: 'Admin Settings', view: 'adminSettings' } : { name: 'Admin Login', view: 'login' },
+                isAdmin ? { name: 'Logout', action: handleLogout } : null
             ].filter(Boolean);
 
             items.forEach(item => {
@@ -241,20 +242,16 @@
             });
         }
 
-        function switchAdminTab(tabName) {
-            Object.values(allAdminTabs).forEach(t => t.classList.remove('active'));
-            Object.values(allAdminContents).forEach(c => c.classList.add('hidden'));
-            allAdminTabs[tabName].classList.add('active');
-            allAdminContents[tabName].classList.remove('hidden');
-        }
-
         // --- Authentication & Admin Check ---
         onAuthStateChanged(auth, async user => {
             const isAdmin = user ? await checkIsAdmin(user.email) : false;
-            if (isAdmin) ADMIN_EMAIL = user.email;
+            if (isAdmin) {
+                ADMIN_EMAIL = user.email;
+                loadAdminData();
+            }
             updateMenuNav(isAdmin);
             if (!window.location.search.includes('id=')) {
-                showView(isAdmin ? 'admin' : 'scanner');
+                showView(isAdmin ? 'members' : 'scanner');
             }
         });
 
@@ -272,23 +269,14 @@
                 .catch(error => document.getElementById('loginError').textContent = error.message);
         }
 
-        // --- Signup Logic ---
-        async function handleSignup() {
-            const name = document.getElementById('newName').value;
-            const level = document.getElementById('newLevel').value;
-            const statusEl = document.getElementById('signupStatus');
-            if (!name || !level) { statusEl.textContent = "Please fill in all fields."; return; }
-            try {
-                await addDoc(collection(db, "members"), { name, level, paymentStatus: "Pending", createdAt: new Date() });
-                statusEl.textContent = "Application submitted successfully!";
-                document.getElementById('newName').value = '';
-            } catch (error) {
-                statusEl.textContent = "Submission failed. Please try again.";
-            }
+        function handleLogout() {
+            signOut(auth);
+            toggleMenu(false);
+            showView('scanner'); // Go to default view after logout
         }
 
         // --- Admin Dashboard ---
-        function loadAdminDashboard() {
+        function loadAdminData() {
             fetchMembers();
             fetchScanLog();
             fetchSettings();
@@ -298,6 +286,7 @@
             onSnapshot(collection(db, "members"), snapshot => {
                 const pendingList = document.getElementById('pendingMembersList');
                 const activeList = document.getElementById('activeMembersList');
+                if (!pendingList || !activeList) return;
                 pendingList.innerHTML = '';
                 activeList.innerHTML = '';
                 snapshot.docs.forEach(doc => {
@@ -335,7 +324,10 @@
             if (member.paymentStatus === 'Pending') {
                 button.textContent = 'Confirm Payment';
                 button.className = 'bg-green-500 text-white text-sm font-bold py-1 px-2 rounded-md hover:bg-green-600';
-                button.onclick = () => updateDoc(doc(db, "members", member.id), { paymentStatus: "Paid" });
+                button.onclick = () => {
+                    updateDoc(doc(db, "members", member.id), { paymentStatus: "Paid" });
+                    showNotification(`Approved ${member.name}`, 'success');
+                };
             } else {
                 button.textContent = 'Write to Card (Android)';
                 button.className = 'bg-blue-500 text-white text-sm font-bold py-1 px-2 rounded-md hover:bg-blue-600';
@@ -347,6 +339,7 @@
         
         window.copyToClipboard = (text, id) => {
             navigator.clipboard.writeText(text).then(() => {
+                showNotification('URL copied to clipboard!', 'success');
                 const btn = document.getElementById(`copy-btn-${id}`);
                 btn.innerHTML = `<svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
                 setTimeout(() => {
@@ -359,6 +352,7 @@
             const scansQuery = query(collection(db, "scans"), orderBy("timestamp", "desc"), limit(50));
             onSnapshot(scansQuery, snapshot => {
                 const logList = document.getElementById('scanLogList');
+                if (!logList) return;
                 logList.innerHTML = '';
                 snapshot.docs.forEach(doc => {
                     const scan = doc.data();
@@ -370,7 +364,7 @@
             });
         }
 
-        // --- Settings Logic ---
+        // --- Settings & Import Logic ---
         async function fetchSettings() {
             const settingsRef = doc(db, "settings", "config");
             const docSnap = await getDoc(settingsRef);
@@ -379,16 +373,20 @@
                 expirySettings = { semester: settings.semester, schoolYear: settings.schoolYear };
                 designSettings = { logoUrl: settings.logoUrl, from: settings.gradientFrom, to: settings.gradientTo };
                 
-                document.getElementById('semesterExpiry').value = expirySettings.semester || '2025-12-19';
-                document.getElementById('yearExpiry').value = expirySettings.schoolYear || '2026-05-22';
-                document.getElementById('logoUrl').value = designSettings.logoUrl || '';
-                document.getElementById('gradientFrom').value = designSettings.from || '#4338ca';
-                document.getElementById('gradientTo').value = designSettings.to || '#1e40af';
+                const semesterInput = document.getElementById('semesterExpiry');
+                if(semesterInput) semesterInput.value = expirySettings.semester || '2025-12-19';
+                const yearInput = document.getElementById('yearExpiry');
+                if(yearInput) yearInput.value = expirySettings.schoolYear || '2026-05-22';
+                const logoInput = document.getElementById('logoUrl');
+                if(logoInput) logoInput.value = designSettings.logoUrl || '';
+                const fromInput = document.getElementById('gradientFrom');
+                if(fromInput) fromInput.value = designSettings.from || '#4338ca';
+                const toInput = document.getElementById('gradientTo');
+                if(toInput) toInput.value = designSettings.to || '#1e40af';
             }
         }
 
         async function saveSettings() {
-            const statusEl = document.getElementById('settingsStatus');
             const settings = {
                 semester: document.getElementById('semesterExpiry').value,
                 schoolYear: document.getElementById('yearExpiry').value,
@@ -396,13 +394,53 @@
                 gradientFrom: document.getElementById('gradientFrom').value,
                 gradientTo: document.getElementById('gradientTo').value,
             };
-            if (!settings.semester || !settings.schoolYear) { statusEl.textContent = "Please set both dates."; return; }
+            if (!settings.semester || !settings.schoolYear) { showNotification("Please set both expiry dates.", 'error'); return; }
             try {
                 await setDoc(doc(db, "settings", "config"), settings);
-                statusEl.textContent = "Settings saved!";
+                showNotification("Settings saved successfully!", 'success');
             } catch {
-                statusEl.textContent = "Error saving settings.";
+                showNotification("Error saving settings.", 'error');
             }
+        }
+
+        function handleCsvImport() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                showNotification("Please select a CSV file first.", 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const csv = event.target.result;
+                const lines = csv.split('\n').slice(1); // Skip header row
+                const batch = writeBatch(db);
+                let count = 0;
+
+                for (const line of lines) {
+                    const [name, level] = line.split(',');
+                    if (name && level) {
+                        const memberRef = doc(collection(db, "members"));
+                        batch.set(memberRef, {
+                            name: name.trim(),
+                            level: level.trim(),
+                            paymentStatus: "Pending",
+                            createdAt: new Date()
+                        });
+                        count++;
+                    }
+                }
+                
+                try {
+                    await batch.commit();
+                    showNotification(`Successfully imported ${count} members.`, 'success');
+                    fileInput.value = ''; // Reset file input
+                } catch {
+                    showNotification('Error importing members.', 'error');
+                }
+            };
+            reader.readAsText(file);
         }
 
         // --- NFC & URL Logic ---
@@ -423,9 +461,11 @@
             try {
                 const ndef = new NDEFReader();
                 await ndef.write({ records: [{ recordType: "text", data: member.id }] });
-                adminStatus.textContent = `Successfully wrote card for ${member.name}!`;
+                showNotification(`Card written for ${member.name}!`, 'success');
+                adminStatus.textContent = '';
             } catch (error) {
-                adminStatus.textContent = 'Failed to write card. Try again.';
+                showNotification('Failed to write card. Try again.', 'error');
+                adminStatus.textContent = '';
             }
         }
         
@@ -454,7 +494,7 @@
         }
 
         async function validateMemberById(memberId) {
-            await fetchSettings(); // Ensure settings are loaded
+            await fetchSettings(); // Ensure settings are loaded for every scan
             const memberRef = doc(db, "members", memberId);
             const docSnap = await getDoc(memberRef);
 
@@ -463,10 +503,11 @@
                 const expiryDate = memberInfo.level === 'Semester' ? expirySettings.semester : expirySettings.schoolYear;
                 displayMemberInfo(memberInfo, expiryDate, true);
                 await logScan(memberInfo);
-                generateWelcomeMessage(memberInfo.name);
+                // generateWelcomeMessage(memberInfo.name);
             } else {
                 displayMemberInfo({ name: "Unknown Member", id: "N/A", level: "N/A" }, "N/A", false);
             }
+             document.getElementById('scanStatus').textContent = ''; // Clear status message
         }
 
         function displayMemberInfo(info, expiry, isValid) {
@@ -515,6 +556,7 @@
             
             if (isValid) {
                 document.getElementById('geminiFeatures').classList.remove('hidden');
+                 document.getElementById('welcomeMessage').textContent = `Welcome back, ${info.name}!`;
             } else {
                  document.getElementById('geminiFeatures').classList.add('hidden');
                  document.getElementById('welcomeMessage').textContent = 'This card is not valid or membership is not active.';
@@ -527,14 +569,17 @@
             } catch (error) { console.error("Error logging scan: ", error); }
         }
 
-        async function generateWelcomeMessage(name) {
-            // Placeholder for brevity
-            document.getElementById('welcomeMessage').textContent = `Welcome back, ${name}!`;
-        }
-
-        async function generatePerkIdeas(name, level) {
-            // Placeholder for brevity
-            document.getElementById('geminiFeatures').innerHTML += `<div class="p-4 bg-gray-50 rounded-lg text-left text-sm">AI perks are a cool feature!</div>`;
+        function showNotification(message, type = 'success') {
+            const toast = document.getElementById('notificationToast');
+            const messageEl = document.getElementById('notificationMessage');
+            
+            messageEl.textContent = message;
+            toast.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         }
 
     </script>
