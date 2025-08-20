@@ -170,6 +170,7 @@
         const db = getFirestore(app);
 
         // --- App Configuration ---
+        const VERCEL_URL = "https://nfc-membership-app.vercel.app/";
         let ADMIN_EMAIL = "jasperchang88888@gmail.com"; // Default admin
 
         // --- Element References ---
@@ -275,6 +276,7 @@
         function createMemberListItem(member) {
             const item = document.createElement('div');
             item.className = 'p-3 bg-gray-50 rounded-lg';
+            const memberUrl = `${VERCEL_URL}?id=${member.id}`;
             item.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div>
@@ -284,10 +286,10 @@
                     <div id="button-container-${member.id}"></div>
                 </div>
                 <div class="mt-2 text-left">
-                    <p class="text-xs text-gray-500">Member ID:</p>
+                    <p class="text-xs text-gray-500">NFC Card URL:</p>
                     <div class="flex items-center gap-2">
-                        <input type="text" readonly value="${member.id}" class="w-full bg-gray-200 text-gray-700 text-xs p-1 rounded">
-                        <button onclick="copyToClipboard('${member.id}', '${member.id}')" id="copy-btn-${member.id}" class="p-1.5 bg-gray-300 rounded hover:bg-gray-400">
+                        <input type="text" readonly value="${memberUrl}" class="w-full bg-gray-200 text-gray-700 text-xs p-1 rounded">
+                        <button onclick="copyToClipboard('${memberUrl}', '${member.id}')" id="copy-btn-${member.id}" class="p-1.5 bg-gray-300 rounded hover:bg-gray-400">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                         </button>
                     </div>
@@ -300,7 +302,7 @@
                 button.className = 'bg-green-500 text-white text-sm font-bold py-1 px-2 rounded-md hover:bg-green-600';
                 button.onclick = () => updateDoc(doc(db, "members", member.id), { paymentStatus: "Paid" });
             } else {
-                button.textContent = 'Write to Card';
+                button.textContent = 'Write to Card (Android)';
                 button.className = 'bg-blue-500 text-white text-sm font-bold py-1 px-2 rounded-md hover:bg-blue-600';
                 button.onclick = () => writeMemberToCard(member);
             }
