@@ -450,10 +450,12 @@
             const cardDisplayWrapper = document.getElementById('cardDisplayWrapper');
             cardDisplayWrapper.innerHTML = `
                 <div class="mt-6 p-6 bg-gradient-to-br from-indigo-700 to-blue-800 text-white rounded-2xl shadow-2xl text-left fade-in relative">
-                    <span id="validationBadge" class="absolute top-4 right-4 text-xs font-bold px-2.5 py-1 rounded-full"></span>
                     <div class="flex justify-between items-start">
                         <h2 class="text-xl font-bold">Club Membership</h2>
-                        <span id="memberLevel" class="bg-yellow-400 text-yellow-900 text-xs font-bold px-2.5 py-1 rounded-full"></span>
+                        <div class="text-right">
+                             <span id="memberLevel" class="bg-yellow-400 text-yellow-900 text-xs font-bold px-2.5 py-1 rounded-full"></span>
+                             <span id="validationBadge" class="block mt-1 text-xs font-bold px-2.5 py-1 rounded-full"></span>
+                        </div>
                     </div>
                     <div class="mt-8">
                         <p class="text-sm opacity-80">MEMBER NAME</p>
@@ -482,7 +484,7 @@
             const geminiFeatures = document.getElementById('geminiFeatures');
 
             validationBadgeEl.textContent = isValid ? 'VALID' : 'INVALID';
-            validationBadgeEl.className = `absolute top-4 right-4 text-xs font-bold px-2.5 py-1 rounded-full ${isValid ? 'bg-green-400 text-green-900' : 'bg-red-400 text-red-900'}`;
+            validationBadgeEl.className = `block mt-1 text-xs font-bold px-2.5 py-1 rounded-full ${isValid ? 'bg-green-400 text-green-900' : 'bg-red-400 text-red-900'}`;
             
             memberNameEl.textContent = info.name;
             memberIdEl.textContent = info.id;
